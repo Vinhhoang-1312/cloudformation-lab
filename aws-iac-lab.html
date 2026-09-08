@@ -1,0 +1,960 @@
+<title>CloudFormation Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F5F6F7;
+    --surface:#FFFFFF;
+    --surface-2:#F0F1F3;
+    --surface-3:#E7E9EC;
+    --border:#D5DBDB;
+    --text:#16191F;
+    --text-muted:#5F6B7A;
+    --accent:#EC7211;
+    --accent-strong:#B85C0E;
+    --accent-wordmark:#FF9900;
+    --success:#037F0C;
+    --success-bg:#E9F6EA;
+    --info:#0972D3;
+    --info-bg:#E7F1FC;
+    --error:#D91515;
+    --error-bg:#FCEAEA;
+    --warning:#8A5A00;
+    --warning-bg:#FBF0DC;
+    --navy:#232F3E;
+    --shadow: 0 1px 2px rgba(22,25,31,.06), 0 4px 12px rgba(22,25,31,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F1B2A;
+      --surface:#16232F;
+      --surface-2:#1B2A38;
+      --surface-3:#22323F;
+      --border:#2E4257;
+      --text:#E9EBED;
+      --text-muted:#9CAAB8;
+      --accent:#FF9900;
+      --accent-strong:#FFB84D;
+      --accent-wordmark:#FF9900;
+      --success:#33C13B;
+      --success-bg:#122A16;
+      --info:#5FA9EE;
+      --info-bg:#12233A;
+      --error:#FF6B6B;
+      --error-bg:#331414;
+      --warning:#F0B84B;
+      --warning-bg:#332406;
+      --navy:#0B1420;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1B2A;
+    --surface:#16232F;
+    --surface-2:#1B2A38;
+    --surface-3:#22323F;
+    --border:#2E4257;
+    --text:#E9EBED;
+    --text-muted:#9CAAB8;
+    --accent:#FF9900;
+    --accent-strong:#FFB84D;
+    --accent-wordmark:#FF9900;
+    --success:#33C13B;
+    --success-bg:#122A16;
+    --info:#5FA9EE;
+    --info-bg:#12233A;
+    --error:#FF6B6B;
+    --error-bg:#331414;
+    --warning:#F0B84B;
+    --warning-bg:#332406;
+    --navy:#0B1420;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Public Sans', -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ text-wrap:balance; font-weight:800; letter-spacing:-.01em; }
+  code, pre, .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  a{ color:var(--info); }
+
+  /* ---- top aws-style bar ---- */
+  .awsbar{
+    background:var(--navy);
+    color:#fff;
+    padding:12px 24px;
+    display:flex; align-items:center; gap:14px;
+    font-size:14px;
+  }
+  .awsbar .logo{ font-weight:800; color:var(--accent-wordmark); font-size:17px; letter-spacing:.02em; }
+  .awsbar .crumb{ color:#AAB7C4; }
+  .awsbar .crumb b{ color:#fff; font-weight:600; }
+  .awsbar .badge-sim{
+    margin-left:auto;
+    background:rgba(255,153,0,.16);
+    border:1px solid rgba(255,153,0,.5);
+    color:var(--accent-wordmark);
+    padding:3px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+  }
+
+  .wrap{ max-width:1120px; margin:0 auto; padding:36px 24px 80px; }
+
+  .eyebrow{
+    text-transform:uppercase; letter-spacing:.09em; font-size:12px; font-weight:700;
+    color:var(--accent-strong); margin:0 0 8px;
+  }
+  .intro h1{ font-size:34px; margin:0 0 12px; }
+  .lede{ max-width:64ch; color:var(--text-muted); font-size:16px; line-height:1.6; margin:0 0 6px; }
+  .lede.small{ font-size:14px; }
+
+  /* ---- tabs ---- */
+  .tabs{ display:flex; gap:8px; margin:28px 0 0; border-bottom:2px solid var(--border); }
+  .tab-btn{
+    font-family:inherit; font-size:15px; font-weight:700; color:var(--text-muted);
+    background:none; border:none; padding:12px 18px; cursor:pointer;
+    border-bottom:3px solid transparent; margin-bottom:-2px;
+    transition:color .15s ease;
+  }
+  .tab-btn:hover{ color:var(--text); }
+  .tab-btn.active{ color:var(--accent-strong); border-bottom-color:var(--accent); }
+  .tab-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .panel{ display:none; padding:24px 0 8px; }
+  .panel.active{ display:block; }
+
+  .panel-note{
+    display:flex; gap:10px; align-items:flex-start;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-size:13.5px; color:var(--text-muted); margin:0 0 20px;
+  }
+  .panel-note b{ color:var(--text); }
+
+  /* ---- stopwatch row ---- */
+  .stat-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .stat-tile{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:12px 16px; min-width:140px; box-shadow:var(--shadow);
+  }
+  .stat-tile .label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:700; }
+  .stat-tile .value{ font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .stat-tile .value.err{ color:var(--error); }
+  .stat-tile .value.ok{ color:var(--success); }
+
+  /* ---- steps list (manual) ---- */
+  .steps{ display:flex; flex-direction:column; gap:10px; }
+  .step{
+    display:grid; grid-template-columns:36px 1fr auto; gap:14px; align-items:center;
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; box-shadow:var(--shadow); transition:opacity .2s ease;
+  }
+  .step.idle{ opacity:.55; }
+  .step .num{
+    width:32px; height:32px; border-radius:50%; background:var(--surface-3); color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;
+  }
+  .step.done .num{ background:var(--success-bg); color:var(--success); }
+  .step.running .num{ background:var(--info-bg); color:var(--info); }
+  .step.error .num{ background:var(--error-bg); color:var(--error); }
+  .step .title{ font-weight:700; font-size:14.5px; }
+  .step .crumb{ font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .step .errmsg{ font-size:12.5px; color:var(--error); margin-top:6px; font-weight:600; }
+  .step .duration{ font-size:11.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; margin-top:4px; }
+
+  .btn{
+    font-family:inherit; font-weight:700; font-size:13.5px; border-radius:8px; padding:9px 16px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;
+    white-space:nowrap; transition:transform .05s ease, background .15s ease;
+  }
+  .btn:hover:not(:disabled){ background:var(--surface-3); }
+  .btn:active:not(:disabled){ transform:scale(.97); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.primary:hover:not(:disabled){ background:var(--accent-strong); }
+  .btn.danger{ background:var(--error-bg); border-color:var(--error); color:var(--error); }
+  .btn.ghost{ background:transparent; }
+  .btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ---- log panel ---- */
+  .log{
+    margin-top:16px; background:var(--navy); border-radius:10px; padding:12px 14px;
+    max-height:180px; overflow-y:auto; font-family:'JetBrains Mono',monospace; font-size:12px;
+    box-shadow:var(--shadow);
+  }
+  .log .line{ display:flex; gap:10px; padding:2px 0; color:#C7D2DB; }
+  .log .line .ts{ color:#6E8299; flex-shrink:0; }
+  .log .line.ok .msg{ color:#7EE08A; }
+  .log .line.warn .msg{ color:#F0C060; }
+  .log .line.err .msg{ color:#FF8080; }
+  .log .empty{ color:#5A6E82; }
+
+  .summary-banner{
+    margin-top:16px; border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600;
+    display:none; align-items:center; gap:10px;
+  }
+  .summary-banner.show{ display:flex; }
+  .summary-banner.ok{ background:var(--success-bg); color:var(--success); }
+
+  /* ---- iac layout ---- */
+  .iac-grid{ display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start; }
+  @media (max-width: 860px){ .iac-grid{ grid-template-columns:1fr; } }
+
+  .code-card{
+    background:var(--navy); border-radius:12px; overflow:hidden; box-shadow:var(--shadow);
+  }
+  .code-head{ display:flex; gap:6px; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.08); flex-wrap:wrap; }
+  .pill{
+    font-family:inherit; font-size:12px; font-weight:700; color:#AAB7C4; background:transparent;
+    border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 12px; cursor:pointer;
+  }
+  .pill.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .code-caption{ padding:8px 14px 0; font-size:12px; color:#8FA0B3; }
+  pre.code{ margin:0; padding:14px; font-size:12.5px; line-height:1.65; color:#D6E0EA; overflow-x:auto; }
+  pre.code .cm{ color:#6E8299; font-style:italic; }
+  pre.code .key{ color:#7EC7F0; }
+
+  .resource-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px;
+    box-shadow:var(--shadow);
+  }
+  .resource-card h3{ margin:0 0 4px; font-size:15px; }
+  .resource-card .sub{ font-size:12.5px; color:var(--text-muted); margin:0 0 14px; }
+
+  .res-row{
+    display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;
+    padding:9px 0; border-bottom:1px solid var(--border);
+  }
+  .res-row:last-child{ border-bottom:none; }
+  .res-row .logical{ font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; }
+  .res-row .type{ font-size:11px; color:var(--text-muted); }
+  .res-row .cfg{ font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .status-pill{
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .status-pill.idle{ background:var(--surface-3); color:var(--text-muted); }
+  .status-pill.progress{ background:var(--info-bg); color:var(--info); }
+  .status-pill.complete{ background:var(--success-bg); color:var(--success); }
+  .status-pill.deleting{ background:var(--error-bg); color:var(--error); }
+
+  .changeset{ margin-top:14px; border:1px dashed var(--border); border-radius:10px; padding:10px 12px; }
+  .changeset .cs-row{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:4px 0; font-family:'JetBrains Mono',monospace; }
+  .cs-add{ color:var(--success); }
+  .cs-mod{ color:var(--warning); }
+  .cs-none{ color:var(--text-muted); }
+
+  .update-box{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
+  .toggle-row{ display:flex; align-items:center; gap:10px; font-size:13.5px; padding:6px 0; }
+  .toggle-row input{ width:16px; height:16px; accent-color:var(--accent); }
+
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+
+  .confirm-bar{
+    display:none; margin-top:12px; background:var(--error-bg); border:1px solid var(--error);
+    border-radius:10px; padding:10px 12px; font-size:13px; color:var(--error);
+    align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .confirm-bar.show{ display:flex; }
+
+  /* ---- scoreboard ---- */
+  section.block{ margin-top:56px; }
+  section.block h2{ font-size:21px; margin:0 0 6px; }
+  section.block > .sub{ color:var(--text-muted); font-size:14px; margin:0 0 18px; max-width:70ch; }
+
+  table.score{ width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow); }
+  table.score th, table.score td{ text-align:left; padding:11px 14px; font-size:13.5px; border-bottom:1px solid var(--border); }
+  table.score th{ background:var(--surface-2); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  table.score tr:last-child td{ border-bottom:none; }
+  table.score td.metric{ color:var(--text-muted); font-weight:600; }
+  table.score td.manual-col, table.score td.iac-col{ font-family:'JetBrains Mono',monospace; font-weight:600; }
+  .yes{ color:var(--success); } .no{ color:var(--error); }
+
+  /* ---- codedeploy card ---- */
+  .cd-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:var(--shadow); }
+  .cd-cluster{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
+  .cd-cluster b{ color:var(--text); font-family:'JetBrains Mono',monospace; }
+  .versions{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .vbox{
+    border:1px solid var(--border); border-radius:10px; padding:12px 16px; min-width:150px;
+    background:var(--surface-2); transition:all .25s ease;
+  }
+  .vbox .vlabel{ font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
+  .vbox .vnum{ font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; margin-top:2px; }
+  .vbox.live{ border-color:var(--success); background:var(--success-bg); }
+  .vbox.live .vnum{ color:var(--success); }
+  .vbox.staging{ border-color:var(--info); background:var(--info-bg); }
+  .vbox.staging .vnum{ color:var(--info); }
+  .arrow{ color:var(--text-muted); font-size:20px; }
+  .cd-note{ font-size:12.5px; color:var(--text-muted); margin-top:14px; }
+  .cd-warn{ font-size:13px; color:var(--warning); background:var(--warning-bg); border-radius:8px; padding:9px 12px; margin-top:12px; display:none; }
+  .cd-warn.show{ display:block; }
+
+  /* ---- classification ---- */
+  table.classify{ width:100%; border-collapse:collapse; }
+  table.classify th, table.classify td{ text-align:left; padding:12px 14px; font-size:13.5px; border:1px solid var(--border); }
+  table.classify th{ background:var(--surface-2); font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  table.classify td.group{ font-weight:700; }
+  .callout{
+    margin-top:14px; border-left:3px solid var(--accent); background:var(--surface-2);
+    padding:11px 14px; font-size:13.5px; border-radius:0 8px 8px 0; color:var(--text);
+  }
+
+  /* ---- glossary ---- */
+  .terms-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+  details.term{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:2px 4px;
+    box-shadow:var(--shadow);
+  }
+  details.term summary{
+    cursor:pointer; list-style:none; padding:12px 14px; font-weight:700; font-size:14px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  details.term summary::-webkit-details-marker{ display:none; }
+  details.term summary::after{ content:"+"; color:var(--text-muted); font-weight:400; font-size:18px; }
+  details.term[open] summary::after{ content:"−"; }
+  details.term p{ margin:0; padding:0 14px 14px; font-size:13px; color:var(--text-muted); line-height:1.55; }
+
+  /* ---- found tools ---- */
+  .tool-list{ display:flex; flex-direction:column; gap:10px; }
+  .tool-item{
+    display:flex; gap:12px; align-items:baseline; background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px; box-shadow:var(--shadow); flex-wrap:wrap;
+  }
+  .tool-item .tname{ font-weight:700; font-size:14px; min-width:190px; }
+  .tool-item .tdesc{ font-size:13px; color:var(--text-muted); flex:1; min-width:200px; }
+  .tool-item a{ font-size:12.5px; font-weight:700; text-decoration:none; white-space:nowrap; }
+
+  footer.pagefoot{ margin-top:60px; padding-top:18px; border-top:1px solid var(--border); font-size:12px; color:var(--text-muted); }
+</style>
+
+<div class="awsbar">
+  <span class="logo">aws</span>
+  <span class="crumb">CloudFormation &rsaquo; <b>Bài học: Console thủ công so với Infrastructure as Code</b></span>
+  <span class="badge-sim">MÔ PHỎNG — KHÔNG PHẢI TÀI KHOẢN THẬT</span>
+</div>
+
+<main class="wrap">
+  <header class="intro">
+    <p class="eyebrow">Phòng lab tương tác</p>
+    <h1>Cùng một hạ tầng, hai cách dựng</h1>
+    <p class="lede">Ứng dụng ví dụ "shoply" cần 6 tài nguyên giống hệt nhau: VPC, subnet, security group, máy chủ web, database và load balancer. Tab 1 dựng chúng bằng cách bấm tay từng bước như trên AWS Console thật. Tab 2 dựng đúng 6 tài nguyên đó bằng một file khai báo. Đồng hồ và bảng so sánh cuối trang ghi lại sự khác biệt.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="manual" role="tab" aria-selected="true">Tab 1 · Trước — Console thủ công</button>
+    <button class="tab-btn" data-tab="iac" role="tab" aria-selected="false">Tab 2 · Sau — Infrastructure as Code</button>
+  </nav>
+
+  <!-- ===== TAB 1: MANUAL ===== -->
+  <section id="panel-manual" class="panel active">
+    <div class="panel-note"><span>🖱️</span><span><b>Cách chơi:</b> bấm "Thực hiện" ở từng bước, theo đúng thứ tự. Mỗi bước có thời gian xử lý riêng — giống việc bạn phải tự điều hướng qua nhiều màn hình console thật. Một bước sẽ phát sinh lỗi cấu hình mà bạn phải tự phát hiện và sửa, y như thực tế.</span></div>
+
+    <div class="stat-row">
+      <div class="stat-tile"><div class="label">Đồng hồ</div><div class="value mono" id="manual-timer">0.0s</div></div>
+      <div class="stat-tile"><div class="label">Bước đã xong</div><div class="value" id="manual-progress">0 / 6</div></div>
+      <div class="stat-tile"><div class="label">Lỗi cấu hình</div><div class="value err" id="manual-errors">0</div></div>
+    </div>
+
+    <div class="steps" id="manual-steps"></div>
+
+    <div class="log" id="manual-log"><div class="empty">Chưa có sự kiện nào — bấm "Thực hiện" ở Bước 1 để bắt đầu.</div></div>
+
+    <div class="summary-banner ok" id="manual-summary"></div>
+    <div class="btn-row"><button class="btn ghost" id="manual-reset">Làm lại từ đầu</button></div>
+  </section>
+
+  <!-- ===== TAB 2: IAC ===== -->
+  <section id="panel-iac" class="panel">
+    <div class="panel-note"><span>📄</span><span><b>Cách chơi:</b> chọn cú pháp (CloudFormation / CDK / SAM) để thấy chúng mô tả cùng một hạ tầng theo cách khác nhau. Xem trước <b>Change Set</b> trước, rồi mới <b>Triển khai Stack</b> — CloudFormation tự làm đúng thứ tự phụ thuộc giữa các tài nguyên, bạn không cần nhớ.</span></div>
+
+    <div class="stat-row">
+      <div class="stat-tile"><div class="label">Đồng hồ</div><div class="value mono" id="iac-timer">0.0s</div></div>
+      <div class="stat-tile"><div class="label">Trạng thái Stack</div><div class="value" id="iac-status" style="font-size:15px;">Chưa triển khai</div></div>
+      <div class="stat-tile"><div class="label">Lỗi cấu hình</div><div class="value ok" id="iac-errors">0</div></div>
+    </div>
+
+    <div class="iac-grid">
+      <div>
+        <div class="code-card">
+          <div class="code-head">
+            <button class="pill active" data-lang="cfn">CloudFormation (YAML)</button>
+            <button class="pill" data-lang="cdk">AWS CDK (Python)</button>
+            <button class="pill" data-lang="sam">AWS SAM (YAML)</button>
+          </div>
+          <div class="code-caption" id="code-caption"></div>
+          <pre class="code" id="code-body"></pre>
+        </div>
+        <div class="log" id="iac-log" style="margin-top:16px;"><div class="empty">Chưa có sự kiện — xem Change Set rồi triển khai Stack.</div></div>
+      </div>
+
+      <div class="resource-card">
+        <h3>Stack: shoply-app</h3>
+        <p class="sub">6 tài nguyên khai báo trong template</p>
+        <div id="iac-resources"></div>
+
+        <div class="changeset" id="iac-changeset" style="display:none;"></div>
+
+        <div class="btn-row">
+          <button class="btn" id="btn-changeset">Xem trước Change Set</button>
+          <button class="btn primary" id="btn-deploy" disabled>Triển khai Stack</button>
+          <button class="btn danger" id="btn-delete" style="display:none;">Xoá Stack</button>
+        </div>
+        <div class="confirm-bar" id="delete-confirm">
+          <span>Xoá toàn bộ 6 tài nguyên trong stack? Không thể hoàn tác.</span>
+          <button class="btn ghost" id="btn-cancel-delete">Huỷ</button>
+          <button class="btn danger" id="btn-confirm-delete">Xoá Stack</button>
+        </div>
+
+        <div class="update-box" id="update-box" style="display:none;">
+          <h3 style="font-size:14px; margin:0 0 6px;">Cập nhật Stack đang chạy</h3>
+          <p class="sub" style="margin-bottom:8px;">Đổi cấu hình rồi xem Change Set — chỉ tài nguyên bị ảnh hưởng mới được đánh dấu sửa đổi.</p>
+          <label class="toggle-row"><input type="checkbox" id="chk-ec2"> Nâng cấp WebServer lên t3.large (đang: t3.micro)</label>
+          <label class="toggle-row"><input type="checkbox" id="chk-rds"> Bật Multi-AZ cho OrdersDB (đang: tắt)</label>
+          <div class="btn-row">
+            <button class="btn" id="btn-update-changeset">Xem Change Set cập nhật</button>
+            <button class="btn primary" id="btn-apply-update" disabled>Áp dụng thay đổi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCOREBOARD ===== -->
+  <section class="block">
+    <h2>So sánh sau khi chạy cả hai tab</h2>
+    <p class="sub">Bốn dòng đầu tự cập nhật theo lần chạy của bạn ở trên. Ba dòng cuối là đặc tính cố định của cách làm, không phụ thuộc vào việc bạn có chạy demo hay chưa.</p>
+    <table class="score">
+      <thead><tr><th>Tiêu chí</th><th>Console thủ công</th><th>Infrastructure as Code</th></tr></thead>
+      <tbody>
+        <tr><td class="metric">Thời gian hoàn tất (mô phỏng)</td><td class="manual-col" id="sc-manual-time">--</td><td class="iac-col" id="sc-iac-time">--</td></tr>
+        <tr><td class="metric">Số lỗi cấu hình phải tự sửa</td><td class="manual-col" id="sc-manual-err">--</td><td class="iac-col" id="sc-iac-err">--</td></tr>
+        <tr><td class="metric">Xem trước thay đổi trước khi áp dụng</td><td class="no">✗ Không có</td><td class="yes">✓ Change Set</td></tr>
+        <tr><td class="metric">Xoá sạch bằng một thao tác</td><td class="no">✗ Phải xoá từng tài nguyên</td><td class="yes">✓ Xoá cả Stack</td></tr>
+        <tr><td class="metric">Dựng lại y hệt cho môi trường Staging</td><td class="no">✗ Dễ lệch cấu hình</td><td class="yes">✓ Chạy lại cùng template</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== CODEDEPLOY ===== -->
+  <section class="block">
+    <h2>Sau khi hạ tầng đã tồn tại: ECS + Fargate + CodeDeploy</h2>
+    <p class="sub">Điểm hay bị nhầm nhất: CodeDeploy <b>không</b> tạo VPC, cluster hay service mới — nó chỉ thay phiên bản ứng dụng trên hạ tầng ECS/Fargate đã được Stack ở Tab 2 dựng sẵn. Vì vậy nút bên dưới chỉ hoạt động sau khi Stack đã <b>CREATE_COMPLETE</b>.</p>
+    <div class="cd-card">
+      <div class="cd-cluster">Cluster: <b>shoply-cluster</b> (Fargate) · Service: <b>shoply-web</b></div>
+      <div class="versions">
+        <div class="vbox live" id="vbox-live"><div class="vlabel">Đang chạy</div><div class="vnum">v1.2</div></div>
+        <span class="arrow" id="cd-arrow" style="display:none;">→</span>
+        <div class="vbox staging" id="vbox-staging" style="display:none;"><div class="vlabel">Triển khai dần</div><div class="vnum" id="cd-progress">0%</div></div>
+      </div>
+      <div class="btn-row"><button class="btn primary" id="btn-codedeploy">Triển khai code mới bằng CodeDeploy → v1.3</button></div>
+      <div class="cd-warn" id="cd-warn">Cần triển khai Stack ở Tab 2 trước — CodeDeploy không tự tạo hạ tầng.</div>
+      <p class="cd-note">Lưu ý: bấm nút này không đụng đến bảng tài nguyên ở Tab 2 — VPC, RDS, ALB… giữ nguyên. Chỉ task definition của service đổi từ v1.2 sang v1.3.</p>
+    </div>
+  </section>
+
+  <!-- ===== CLASSIFICATION ===== -->
+  <section class="block">
+    <h2>Điểm dễ nhầm nhất: 8 dịch vụ, chỉ 2 nhóm</h2>
+    <p class="sub">Nhiều tài liệu liệt kê các dịch vụ deploy của AWS như thể chúng ngang hàng nhau. Thực ra chúng chia làm hai việc rất khác nhau:</p>
+    <table class="classify">
+      <thead><tr><th>Nhóm</th><th>Dịch vụ</th><th>Làm gì</th></tr></thead>
+      <tbody>
+        <tr><td class="group">Tạo hạ tầng</td><td>CloudFormation, CDK, SAM, Elastic Beanstalk</td><td>Dựng VPC, EC2, RDS, ECS cluster… từ con số 0</td></tr>
+        <tr><td class="group">Đẩy code</td><td>CodeDeploy</td><td>Hạ tầng đã có sẵn, chỉ thay phiên bản ứng dụng</td></tr>
+      </tbody>
+    </table>
+    <p class="callout">ECS và EKS không thuộc nhóm nào ở trên — chúng là <b>nơi container chạy</b>, không phải công cụ deploy. Gộp chung 8 cái vào một danh sách phẳng là lý do khái niệm này hay gây rối.</p>
+
+    <h3 style="font-size:14px; margin:26px 0 10px;">Biết tên là đủ, chưa cần đào sâu</h3>
+    <table class="classify">
+      <thead><tr><th>Dịch vụ</th><th>Một câu để nhớ</th></tr></thead>
+      <tbody>
+        <tr><td>Elastic Beanstalk</td><td>Upload code (Java/.NET/PHP/Node.js/Python/Ruby/Go/Docker) → tự dựng hạ tầng. Web server environment (HTTP) hoặc Worker environment (job dài, tích hợp SQS). Cấu hình lưu trong thư mục .ebextensions.</td></tr>
+        <tr><td>Amazon ECS Anywhere</td><td>Chạy cluster ECS ngay tại server on-premises thay vì trên AWS, vẫn quản lý chung qua ECS console.</td></tr>
+        <tr><td>Amazon EKS (+ Outposts / Anywhere / Distro)</td><td>Bản Kubernetes quản lý của AWS — 4 cách triển khai, từ chạy trên AWS đến tự quản lý hoàn toàn on-premises.</td></tr>
+        <tr><td>AWS OpsWorks</td><td>Quản lý server bằng Chef/Puppet — công nghệ IaC đời trước CloudFormation.</td></tr>
+        <tr><td>AWS Proton</td><td>Platform team phát template chuẩn (container/serverless) cho hàng trăm dev dùng lại qua cổng self-service.</td></tr>
+        <tr><td>Serverless Application Repository</td><td>Kho chia sẻ app serverless (đi kèm SAM) công khai hoặc nội bộ trong tổ chức.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== GLOSSARY ===== -->
+  <section class="block">
+    <h2>Thuật ngữ cần nhớ</h2>
+    <p class="sub">Bấm để mở từng thẻ.</p>
+    <div class="terms-grid">
+      <details class="term" open><summary>Infrastructure as Code (IaC)</summary><p>Hạ tầng (server, DB, mạng) được viết ra bằng file text. Chạy file đó thì AWS tự dựng — không bấm tay trên console. Là khái niệm gốc của toàn bộ trang này.</p></details>
+      <details class="term"><summary>Stack</summary><p>Một nhóm tài nguyên được dựng cùng nhau từ một file template. Xoá stack = xoá sạch mọi thứ trong đó — như nút "Xoá Stack" ở Tab 2.</p></details>
+      <details class="term"><summary>Change Set</summary><p>Chế độ xem trước. Cho biết khi sửa template thì tài nguyên nào bị tạo mới, sửa, hay xoá — trước khi thực sự chạy. Thử ở mục "Cập nhật Stack đang chạy".</p></details>
+      <details class="term"><summary>Nested Stack</summary><p>Tách một template lớn thành nhiều template nhỏ theo tầng (compute, database, network) để sửa tầng này không ảnh hưởng tầng kia. Vẫn nằm trong <b>một</b> tài khoản AWS.</p></details>
+      <details class="term"><summary>Stack Set</summary><p>Một Stack thường chỉ áp dụng cho một tài khoản AWS. Stack Set mở rộng điều đó: tạo/cập nhật/xoá cùng một stack trên <b>nhiều tài khoản và nhiều region</b> cùng lúc, quản lý tập trung từ một tài khoản Administrator trong AWS Organizations. Khác Nested Stack ở chỗ: Nested Stack chia nhỏ theo tầng trong 1 account, Stack Set nhân bản cùng 1 stack ra nhiều account/region.</p></details>
+      <details class="term"><summary>AWS CDK</summary><p>Viết hạ tầng bằng Python (hoặc TypeScript) thay vì YAML. Cuối cùng vẫn sinh ra CloudFormation phía sau — xem cột "AWS CDK" ở Tab 2 để so cú pháp.</p></details>
+      <details class="term"><summary>AWS SAM</summary><p>Bản rút gọn của CloudFormation, chuyên cho Lambda + API Gateway + DynamoDB. Ít dòng cấu hình hơn nhiều so với viết CloudFormation thuần.</p></details>
+      <details class="term"><summary>ECS + Fargate</summary><p>Nơi container thực sự chạy. ECS quản lý container; Fargate là chế độ không cần quản server, chỉ khai báo CPU/RAM.</p></details>
+      <details class="term"><summary>CodeDeploy</summary><p>Chỉ đẩy phiên bản code mới lên hạ tầng đã tồn tại — có thể là EC2, ECS, Lambda, hoặc cả server on-premises. Không tạo hạ tầng — khác biệt quan trọng nhất so với CloudFormation/SAM.</p></details>
+    </div>
+  </section>
+
+  <!-- ===== FOUND TOOLS ===== -->
+  <section class="block">
+    <h2>Mô hình học kéo-thả kiểu này đã có ai làm chưa?</h2>
+    <p class="sub">Đã có vài phiên bản thật từ chính AWS và bên thứ ba — bạn có thể vào thẳng các link dưới để học tiếp trên dữ liệu thật:</p>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tname">AWS Infrastructure Composer</span><span class="tdesc">Kéo-thả tài nguyên AWS lên canvas trực quan, tự sinh template CloudFormation phía sau — gần nhất với ý tưởng "kéo thả" của bạn.</span><a href="https://aws.amazon.com/application-composer/features" target="_blank" rel="noopener">Xem →</a></div>
+      <div class="tool-item"><span class="tname">AWS CloudFormation Designer</span><span class="tdesc">Công cụ chính chủ trong AWS Console, vẽ sơ đồ tài nguyên và tự sửa JSON/YAML bên dưới.</span><a href="https://aws.amazon.com/about-aws/whats-new/2015/10/introducing-aws-cloudformation-designer-for-visually-authoring-templates/" target="_blank" rel="noopener">Xem →</a></div>
+      <div class="tool-item"><span class="tname">AWS Cloud Quest</span><span class="tdesc">Game 3D chính chủ của AWS, học kiến trúc cloud qua các thử thách trong một thành phố ảo.</span><a href="https://www.aboutamazon.com/news/aws/aws-game-training-cloud-skills" target="_blank" rel="noopener">Xem →</a></div>
+      <div class="tool-item"><span class="tname">DevOps Daily — Interactive Games</span><span class="tdesc">Danh sách lab tương tác miễn phí, gồm cả lab Terraform cho phép sửa HCL và xem state phản ứng ngay trên trình duyệt.</span><a href="https://devops-daily.com/games" target="_blank" rel="noopener">Xem →</a></div>
+      <div class="tool-item"><span class="tname">Stackery</span><span class="tdesc">Kéo-thả tài nguyên trên lưới đồ hoạ, tự sinh code CloudFormation/SAM tương ứng.</span><a href="https://www.stackery.io/blog/visualizing-CloudFormation-with-Stackery" target="_blank" rel="noopener">Xem →</a></div>
+    </div>
+  </section>
+
+  <footer class="pagefoot">Trang mô phỏng phục vụ học tập — không kết nối tài khoản AWS, không phát sinh chi phí thật.</footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- helpers ----------
+  function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmt1(ms){ return (ms/1000).toFixed(1)+'s'; }
+  function nowTag(startTs){ return '['+((performance.now()-startTs)/1000).toFixed(1)+'s]'; }
+
+  function appendLog(el, tag, msg, cls){
+    var empty = el.querySelector('.empty');
+    if(empty) empty.remove();
+    var line = document.createElement('div');
+    line.className = 'line' + (cls?(' '+cls):'');
+    line.innerHTML = '<span class="ts">'+tag+'</span><span class="msg">'+esc(msg)+'</span>';
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ---------- tabs ----------
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ================= TAB 1: MANUAL =================
+  var manualSteps = [
+    { id:'vpc', title:'Tạo VPC', crumb:'VPC › Your VPCs › Create VPC', duration:1400 },
+    { id:'subnet', title:'Tạo Subnet công khai', crumb:'VPC › Subnets › Create subnet', duration:1200 },
+    { id:'sg', title:'Tạo Security Group', crumb:'EC2 › Security Groups › Create security group', duration:1600,
+      hasError:true, errorMsg:'Thiếu rule Inbound mở cổng 443 (HTTPS) — người dùng sẽ không truy cập được', fixDuration:1800, fixLabel:'Sửa lại Inbound rules' },
+    { id:'ec2', title:'Launch EC2 (máy chủ web)', crumb:'EC2 › Instances › Launch instances', duration:2000 },
+    { id:'rds', title:'Tạo RDS Database', crumb:'RDS › Databases › Create database', duration:2400 },
+    { id:'alb', title:'Tạo Application Load Balancer', crumb:'EC2 › Load Balancers › Create load balancer', duration:1800 }
+  ];
+  var mState = { index:0, running:false, startTs:0, elapsed:0, errors:0, timer:null, done:false, fixed:{} };
+
+  var stepsEl = document.getElementById('manual-steps');
+  function renderManualSteps(){
+    stepsEl.innerHTML = manualSteps.map(function(s, i){
+      var cls = 'idle';
+      var extra = '';
+      if(i < mState.index) cls = 'done';
+      else if(i === mState.index && mState.running) cls = mState.currentError ? 'error' : 'running';
+      else if(i === mState.index) cls = mState.currentError ? 'error' : 'idle';
+
+      var btnLabel = 'Thực hiện';
+      var btnDisabled = (i !== mState.index) || mState.done;
+      if(i === mState.index && mState.currentError) btnLabel = s.fixLabel;
+      if(i === mState.index && mState.running) { btnLabel = mState.currentError ? 'Đang sửa…' : 'Đang xử lý…'; btnDisabled = true; }
+
+      if(cls === 'error') extra = '<div class="errmsg">⚠ '+esc(s.errorMsg)+'</div>';
+      if(cls === 'done') extra = '<div class="duration">Hoàn tất</div>';
+
+      return '<div class="step '+cls+'">' +
+        '<div class="num">'+ (cls==='done' ? '✓' : (i+1)) +'</div>' +
+        '<div><div class="title">'+esc(s.title)+'</div><div class="crumb">'+esc(s.crumb)+'</div>'+extra+'</div>' +
+        '<button class="btn primary step-btn" data-i="'+i+'" '+(btnDisabled?'disabled':'')+'>'+btnLabel+'</button>' +
+        '</div>';
+    }).join('');
+    document.getElementById('manual-progress').textContent = mState.index + ' / ' + manualSteps.length;
+    document.getElementById('manual-errors').textContent = mState.errors;
+
+    stepsEl.querySelectorAll('.step-btn').forEach(function(b){
+      b.addEventListener('click', function(){ runManualStep(parseInt(b.dataset.i,10)); });
+    });
+  }
+
+  function startManualTimer(){
+    mState.startTs = performance.now();
+    mState.timer = setInterval(function(){
+      document.getElementById('manual-timer').textContent = fmt1(performance.now()-mState.startTs);
+    }, 100);
+  }
+
+  async function runManualStep(i){
+    if(i !== mState.index || mState.running || mState.done) return;
+    if(mState.index === 0 && !mState.timer) startManualTimer();
+    var s = manualSteps[i];
+    var log = document.getElementById('manual-log');
+
+    if(s.hasError && !mState.fixed[s.id] && !mState.currentError){
+      mState.running = true;
+      renderManualSteps();
+      appendLog(log, nowTag(mState.startTs), s.title+' — đang xử lý…', null);
+      await wait(s.duration);
+      mState.running = false;
+      mState.currentError = true;
+      mState.errors++;
+      appendLog(log, nowTag(mState.startTs), s.title+' — LỖI: '+s.errorMsg, 'err');
+      renderManualSteps();
+      return;
+    }
+
+    if(s.hasError && mState.currentError){
+      mState.running = true;
+      renderManualSteps();
+      appendLog(log, nowTag(mState.startTs), s.fixLabel+'…', 'warn');
+      await wait(s.fixDuration);
+      mState.fixed[s.id] = true;
+      mState.currentError = false;
+      mState.running = false;
+      appendLog(log, nowTag(mState.startTs), s.title+' — đã sửa, hoàn tất', 'ok');
+      advanceManual(log);
+      return;
+    }
+
+    mState.running = true;
+    renderManualSteps();
+    appendLog(log, nowTag(mState.startTs), s.title+' — đang xử lý…', null);
+    await wait(s.duration);
+    mState.running = false;
+    appendLog(log, nowTag(mState.startTs), s.title+' — hoàn tất', 'ok');
+    advanceManual(log);
+  }
+
+  function advanceManual(log){
+    mState.index++;
+    if(mState.index >= manualSteps.length){
+      mState.done = true;
+      clearInterval(mState.timer);
+      mState.elapsed = performance.now()-mState.startTs;
+      var banner = document.getElementById('manual-summary');
+      banner.classList.add('show');
+      banner.textContent = '✓ Hoàn tất 6/6 tài nguyên — '+fmt1(mState.elapsed)+' mô phỏng, '+mState.errors+' lỗi cấu hình phải tự sửa. (Thực tế: thường 20–40 phút.)';
+      document.getElementById('sc-manual-time').textContent = fmt1(mState.elapsed);
+      document.getElementById('sc-manual-err').textContent = mState.errors;
+    }
+    renderManualSteps();
+  }
+
+  document.getElementById('manual-reset').addEventListener('click', function(){
+    clearInterval(mState.timer);
+    mState = { index:0, running:false, startTs:0, elapsed:0, errors:0, timer:null, done:false, fixed:{} };
+    document.getElementById('manual-timer').textContent = '0.0s';
+    document.getElementById('manual-summary').classList.remove('show');
+    document.getElementById('manual-log').innerHTML = '<div class="empty">Chưa có sự kiện nào — bấm "Thực hiện" ở Bước 1 để bắt đầu.</div>';
+    renderManualSteps();
+  });
+
+  renderManualSteps();
+
+  // ================= TAB 2: IAC =================
+  var RES = [
+    { id:'vpc', logicalId:'AppVPC', type:'AWS::EC2::VPC', duration:700 },
+    { id:'subnet', logicalId:'PublicSubnet', type:'AWS::EC2::Subnet', duration:500 },
+    { id:'sg', logicalId:'WebSecurityGroup', type:'AWS::EC2::SecurityGroup', duration:600 },
+    { id:'ec2', logicalId:'WebServer', type:'AWS::EC2::Instance', duration:900 },
+    { id:'rds', logicalId:'OrdersDB', type:'AWS::RDS::DBInstance', duration:1000 },
+    { id:'alb', logicalId:'AppLoadBalancer', type:'AWS::ElasticLoadBalancingV2::LoadBalancer', duration:700 }
+  ];
+
+  var iState = {
+    resources: RES.map(function(r){ return Object.assign({}, r, { status:'idle' }); }),
+    applied: { ec2Type:'t3.micro', rdsMultiAZ:false },
+    changeSetPreviewed:false,
+    deployed:false,
+    running:false,
+    startTs:0,
+    timer:null,
+    elapsed:0
+  };
+
+  function cfgText(id){
+    if(id === 'ec2') return 'InstanceType: ' + iState.applied.ec2Type;
+    if(id === 'rds') return 'MultiAZ: ' + (iState.applied.rdsMultiAZ ? 'true' : 'false');
+    return null;
+  }
+
+  function renderIacResources(){
+    var el = document.getElementById('iac-resources');
+    el.innerHTML = iState.resources.map(function(r){
+      var pillCls = 'idle', pillText = 'chưa tạo';
+      if(r.status === 'progress'){ pillCls='progress'; pillText='IN_PROGRESS'; }
+      else if(r.status === 'complete'){ pillCls='complete'; pillText='COMPLETE'; }
+      else if(r.status === 'deleting'){ pillCls='deleting'; pillText='DELETING'; }
+      var cfg = cfgText(r.id);
+      return '<div class="res-row">' +
+        '<div><div class="logical">'+r.logicalId+'</div><div class="type">'+r.type+'</div>'+(cfg && r.status==='complete' ? '<div class="cfg">'+cfg+'</div>' : '')+'</div>' +
+        '<span class="status-pill '+pillCls+'">'+pillText+'</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  function startIacTimer(){
+    iState.startTs = performance.now();
+    iState.timer = setInterval(function(){
+      document.getElementById('iac-timer').textContent = fmt1(performance.now()-iState.startTs);
+    }, 100);
+  }
+  function stopIacTimer(){ clearInterval(iState.timer); }
+
+  document.getElementById('btn-changeset').addEventListener('click', function(){
+    iState.changeSetPreviewed = true;
+    var el = document.getElementById('iac-changeset');
+    el.style.display = 'block';
+    el.innerHTML = iState.resources.map(function(r){
+      return '<div class="cs-row"><span>'+r.logicalId+'</span><span class="cs-add">+ Thêm mới</span></div>';
+    }).join('');
+    document.getElementById('btn-deploy').disabled = false;
+  });
+
+  document.getElementById('btn-deploy').addEventListener('click', async function(){
+    if(iState.running || iState.deployed) return;
+    iState.running = true;
+    document.getElementById('btn-deploy').disabled = true;
+    document.getElementById('btn-changeset').disabled = true;
+    document.getElementById('iac-status').textContent = 'CREATE_IN_PROGRESS';
+    startIacTimer();
+    var log = document.getElementById('iac-log');
+    log.innerHTML = '';
+
+    for(var i=0;i<iState.resources.length;i++){
+      var r = iState.resources[i];
+      r.status = 'progress';
+      renderIacResources();
+      appendLog(log, nowTag(iState.startTs), r.logicalId+' — CREATE_IN_PROGRESS', null);
+      await wait(r.duration);
+      r.status = 'complete';
+      renderIacResources();
+      appendLog(log, nowTag(iState.startTs), r.logicalId+' — CREATE_COMPLETE', 'ok');
+    }
+
+    stopIacTimer();
+    iState.elapsed = performance.now()-iState.startTs;
+    iState.running = false;
+    iState.deployed = true;
+    document.getElementById('iac-status').textContent = 'CREATE_COMPLETE';
+    document.getElementById('iac-changeset').style.display = 'none';
+    document.getElementById('btn-deploy').style.display = 'none';
+    document.getElementById('btn-changeset').style.display = 'none';
+    document.getElementById('btn-delete').style.display = 'inline-block';
+    document.getElementById('update-box').style.display = 'block';
+    appendLog(log, nowTag(iState.startTs), 'Stack shoply-app — CREATE_COMPLETE ('+fmt1(iState.elapsed)+')', 'ok');
+
+    document.getElementById('sc-iac-time').textContent = fmt1(iState.elapsed);
+    document.getElementById('sc-iac-err').textContent = '0';
+    document.getElementById('cd-warn').classList.remove('show');
+  });
+
+  // ---- update / change set on running stack ----
+  var pendingUpdate = null;
+  document.getElementById('btn-update-changeset').addEventListener('click', function(){
+    var wantEc2 = document.getElementById('chk-ec2').checked;
+    var wantRds = document.getElementById('chk-rds').checked;
+    var rows = [];
+    var modified = [];
+    iState.resources.forEach(function(r){
+      var willChange = false;
+      if(r.id === 'ec2' && wantEc2 && iState.applied.ec2Type !== 't3.large'){ willChange = true; }
+      if(r.id === 'rds' && wantRds && iState.applied.rdsMultiAZ !== true){ willChange = true; }
+      if(willChange) modified.push(r.id);
+      rows.push('<div class="cs-row"><span>'+r.logicalId+'</span><span class="'+(willChange?'cs-mod':'cs-none')+'">'+(willChange?'✎ Sửa đổi':'— Không đổi')+'</span></div>');
+    });
+    var el = document.getElementById('iac-changeset');
+    el.style.display = 'block';
+    el.innerHTML = rows.join('');
+    pendingUpdate = { ec2: wantEc2, rds: wantRds, modified: modified };
+    document.getElementById('btn-apply-update').disabled = modified.length === 0;
+  });
+
+  document.getElementById('btn-apply-update').addEventListener('click', async function(){
+    if(!pendingUpdate || pendingUpdate.modified.length === 0) return;
+    document.getElementById('btn-apply-update').disabled = true;
+    document.getElementById('btn-update-changeset').disabled = true;
+    var log = document.getElementById('iac-log');
+    for(var i=0;i<pendingUpdate.modified.length;i++){
+      var id = pendingUpdate.modified[i];
+      var r = iState.resources.find(function(x){ return x.id === id; });
+      r.status = 'progress';
+      renderIacResources();
+      appendLog(log, nowTag(iState.startTs), r.logicalId+' — UPDATE_IN_PROGRESS', null);
+      await wait(900);
+      if(id === 'ec2') iState.applied.ec2Type = 't3.large';
+      if(id === 'rds') iState.applied.rdsMultiAZ = true;
+      r.status = 'complete';
+      renderIacResources();
+      appendLog(log, nowTag(iState.startTs), r.logicalId+' — UPDATE_COMPLETE', 'ok');
+    }
+    document.getElementById('iac-changeset').style.display = 'none';
+    document.getElementById('btn-update-changeset').disabled = false;
+    pendingUpdate = null;
+  });
+
+  // ---- delete stack ----
+  document.getElementById('btn-delete').addEventListener('click', function(){
+    document.getElementById('delete-confirm').classList.add('show');
+  });
+  document.getElementById('btn-cancel-delete').addEventListener('click', function(){
+    document.getElementById('delete-confirm').classList.remove('show');
+  });
+  document.getElementById('btn-confirm-delete').addEventListener('click', async function(){
+    document.getElementById('delete-confirm').classList.remove('show');
+    document.getElementById('btn-delete').disabled = true;
+    document.getElementById('update-box').style.display = 'none';
+    document.getElementById('iac-status').textContent = 'DELETE_IN_PROGRESS';
+    var log = document.getElementById('iac-log');
+    for(var i=iState.resources.length-1;i>=0;i--){
+      var r = iState.resources[i];
+      r.status = 'deleting';
+      renderIacResources();
+      appendLog(log, nowTag(iState.startTs), r.logicalId+' — DELETE_IN_PROGRESS', 'warn');
+      await wait(400);
+    }
+    iState.resources.forEach(function(r){ r.status = 'idle'; });
+    iState.deployed = false;
+    iState.changeSetPreviewed = false;
+    iState.applied = { ec2Type:'t3.micro', rdsMultiAZ:false };
+    renderIacResources();
+    appendLog(log, nowTag(iState.startTs), 'Stack shoply-app — đã xoá, 0 tài nguyên còn lại', 'err');
+    document.getElementById('iac-status').textContent = 'Chưa triển khai';
+    document.getElementById('btn-delete').style.display = 'none';
+    document.getElementById('btn-delete').disabled = false;
+    document.getElementById('btn-deploy').style.display = 'inline-block';
+    document.getElementById('btn-deploy').disabled = true;
+    document.getElementById('btn-changeset').style.display = 'inline-block';
+    document.getElementById('btn-changeset').disabled = false;
+    document.getElementById('chk-ec2').checked = false;
+    document.getElementById('chk-rds').checked = false;
+  });
+
+  renderIacResources();
+
+  // ---- code panel: cfn / cdk / sam ----
+  var SNIPPETS = {
+    cfn: {
+      caption: 'CloudFormation — mô tả hạ tầng bằng YAML thuần, chạy trực tiếp bởi CloudFormation.',
+      lines: [
+        'Resources:',
+        '  AppVPC:',
+        '    Type: AWS::EC2::VPC',
+        '    Properties: { CidrBlock: 10.0.0.0/16 }',
+        '  WebSecurityGroup:',
+        '    Type: AWS::EC2::SecurityGroup',
+        '    Properties:',
+        '      SecurityGroupIngress:',
+        '        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }',
+        '  WebServer:',
+        '    Type: AWS::EC2::Instance',
+        '    Properties: { InstanceType: t3.micro }',
+        '  OrdersDB:',
+        '    Type: AWS::RDS::DBInstance',
+        '    Properties: { Engine: postgres, MultiAZ: false }',
+        '  AppLoadBalancer:',
+        '    Type: AWS::ElasticLoadBalancingV2::LoadBalancer'
+      ]
+    },
+    cdk: {
+      caption: 'AWS CDK — cùng hạ tầng, viết bằng Python. "cdk deploy" sẽ tự sinh ra CloudFormation rồi mới chạy.',
+      lines: [
+        'vpc = ec2.Vpc(self, "AppVPC", cidr="10.0.0.0/16")',
+        '',
+        'sg = ec2.SecurityGroup(self, "WebSecurityGroup", vpc=vpc)',
+        'sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443))',
+        '',
+        'web = ec2.Instance(self, "WebServer",',
+        '    instance_type=ec2.InstanceType("t3.micro"),',
+        '    vpc=vpc, security_group=sg)',
+        '',
+        'db = rds.DatabaseInstance(self, "OrdersDB",',
+        '    engine=rds.DatabaseInstanceEngine.postgres(...),',
+        '    multi_az=False)',
+        '',
+        'alb = elbv2.ApplicationLoadBalancer(self, "AppLoadBalancer",',
+        '    vpc=vpc, internet_facing=True)',
+        '',
+        '# cdk deploy  →  sinh template CloudFormation  →  CloudFormation chạy nó'
+      ]
+    },
+    sam: {
+      caption: 'AWS SAM — rút gọn cho Lambda + API Gateway + DynamoDB, không phải cho VPC/EC2/RDS như hai cột kia. Ví dụ dưới là một app serverless khác để so cú pháp.',
+      lines: [
+        'Transform: AWS::Serverless-2016-10-31',
+        'Resources:',
+        '  OrdersFunction:',
+        '    Type: AWS::Serverless::Function',
+        '    Properties:',
+        '      Handler: app.handler',
+        '      Runtime: python3.12',
+        '      Events:',
+        '        Api:',
+        '          Type: Api',
+        '          Properties: { Path: /orders, Method: get }',
+        '  OrdersTable:',
+        '    Type: AWS::Serverless::SimpleTable'
+      ]
+    }
+  };
+
+  function renderCode(lang){
+    var s = SNIPPETS[lang];
+    document.getElementById('code-caption').textContent = s.caption;
+    document.getElementById('code-body').innerHTML = s.lines.map(function(l){
+      var t = esc(l);
+      if(/^\s*#/.test(l)) return '<span class="cm">'+t+'</span>';
+      return t;
+    }).join('\n');
+  }
+  document.querySelectorAll('.pill').forEach(function(p){
+    p.addEventListener('click', function(){
+      document.querySelectorAll('.pill').forEach(function(x){ x.classList.remove('active'); });
+      p.classList.add('active');
+      renderCode(p.dataset.lang);
+    });
+  });
+  renderCode('cfn');
+
+  // ================= CODEDEPLOY =================
+  document.getElementById('btn-codedeploy').addEventListener('click', async function(){
+    if(!iState.deployed){
+      document.getElementById('cd-warn').classList.add('show');
+      return;
+    }
+    document.getElementById('cd-warn').classList.remove('show');
+    var btn = document.getElementById('btn-codedeploy');
+    btn.disabled = true;
+    var staging = document.getElementById('vbox-staging');
+    var arrow = document.getElementById('cd-arrow');
+    var progressEl = document.getElementById('cd-progress');
+    staging.style.display = 'block';
+    arrow.style.display = 'inline';
+    for(var p=0; p<=100; p+=20){
+      progressEl.textContent = p+'%';
+      await wait(220);
+    }
+    document.getElementById('vbox-live').querySelector('.vnum').textContent = 'v1.3';
+    staging.style.display = 'none';
+    arrow.style.display = 'none';
+    btn.textContent = 'Triển khai lại (đang ở v1.3)';
+    btn.disabled = false;
+  });
+
+})();
+</script>
